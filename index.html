@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="편입 가계부">
+<title>편입 가계부</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#f2f4f6;color:#191f28;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+main{max-width:500px;margin:auto;padding:24px 20px 100px}
+h1{font-size:25px;margin:12px 0 24px}
+h2{font-size:19px}
+.card{
+  background:white;border-radius:22px;
+  padding:22px;margin-bottom:16px;
+}
+.hero{background:#3182f6;color:white}
+.label{font-size:14px;opacity:.8}
+.amount{font-size:34px;font-weight:800;margin:12px 0}
+.row{display:flex;justify-content:space-between;gap:12px}
+.small{font-size:14px;color:#6b7684}
+button,input,select,textarea{font:inherit}
+button{
+  border:0;border-radius:12px;padding:13px;
+  background:#3182f6;color:white;cursor:pointer;
+}
+.primary{width:100%;font-weight:700}
+.secondary{background:#e8f3ff;color:#3182f6}
+.danger{background:#fff0f0;color:#e54848}
+input,select,textarea{
+  width:100%;padding:14px;margin:7px 0 15px;
+  border:1px solid #e5e8eb;border-radius:12px;
+  background:#f9fafb;font-size:16px;
+}
+nav{
+  position:fixed;bottom:0;left:0;right:0;
+  display:flex;justify-content:center;background:white;
+  padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  border-top:1px solid #e5e8eb;
+}
+nav button{
+  flex:1;max-width:100px;background:white;
+  color:#6b7684;font-size:12px;padding:8px 0;
+}
+nav button.active{color:#3182f6;font-weight:800}
+.icon{display:block;font-size:23px;margin-bottom:5px}
+.bar{height:9px;background:#e5e8eb;border-radius:9px;overflow:hidden;margin:12px 0}
+.fill{height:100%;background:#3182f6;border-radius:9px}
+.entry{padding:17px 0;border-bottom:1px solid #f2f4f6}
+.entry:last-child{border:0}
+.entry strong{font-size:16px}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions button{font-size:12px;padding:7px 12px}
+.page{display:none}
+.page.active{display:block}
+.empty{text-align:center;color:#8b95a1;padding:25px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>편입 가계부</h1>
+
+<section id="home" class="page active">
+  <div class="card hero">
+    <div class="label">지금까지 사용한 금액</div>
+    <div class="amount" id="total">0원</div>
+    <div class="row">
+      <span>이번 달 지출</span>
+      <strong id="monthly">0원</strong>
+    </div>
+  </div>
+  <div class="card">
+    <div class="small">남은 예산</div>
+    <div class="amount" id="remaining">0원</div>
+    <div class="bar"><div class="fill" id="budgetBar"></div></div>
+    <div class="small" id="budgetText"></div>
+  </div>
+  <div class="card">
+    <div class="small">앞으로 지출할 예정 금액</div>
+    <h2 id="planned">0원</h2>
+  </div>
+  <button class="primary" onclick="newEntry()">＋ 지출 등록</button>
+  <h2>최근 지출</h2>
+  <div class="card" id="recent"></div>
+</section>
+
+<section id="history" class="page">
+  <h2>전체 지출 내역</h2>
+  <select id="filter" onchange="render()">
+    <option value="all">전체 내역</option>
+    <option value="paid">실제 지출</option>
+    <option value="planned">예정 지출</option>
+  </select>
+  <div class="card" id="entries"></div>
+</section>
+
+<section id="add" class="page">
+  <div class="card">
+    <h2 id="formTitle">지출 등록</h2>
+    <form id="expenseForm">
+      <label>구매 항목</label>
+      <input id="item" placeholder="예: 해커스 무제한 패스" required>
+      <label>결제 금액</label>
+      <input id="price" type="number" inputmode="numeric" min="1" placeholder="금액 입력" required>
+      <label>카테고리</label>
+      <select id="category">
+        <option>인터넷 강의</option>
+        <option>수학 교재</option>
+        <option>영어 교재</option>
+        <option>학원비</option>
+        <option>모의고사</option>
+        <option>원서 접수</option>
+        <option>교통비</option>
+        <option>독서실</option>
+        <option>기타</option>
+      </select>
+      <label>날짜</label>
+      <input id="date" type="date" required>
+      <label>지출 상태</label>
+      <select id="status">
+        <option value="paid">결제 완료</option>
+        <option value="planned">결제 예정</option>
+      </select>
+      <label>메모</label>
+      <textarea id="memo" placeholder="선택 입력"></textarea>
+      <button class="primary" type="submit">저장하기</button>
+    </form>
+  </div>
+</section>
+
+<section id="stats" class="page">
+  <h2>카테고리별 지출</h2>
+  <div class="card" id="categories"></div>
+  <h2>월별 지출</h2>
+  <div class="card" id="months"></div>
+</section>
+
+<section id="settings" class="page">
+  <div class="card">
+    <h2>목표 예산 설정</h2>
+    <input id="budget" type="number" min="0" inputmode="numeric" placeholder="총예산 입력">
+    <button class="primary" onclick="saveBudget()">예산 저장</button>
+  </div>
+  <div class="card">
+    <h2>데이터 관리</h2>
+    <button class="primary secondary" onclick="backup()">데이터 백업</button>
+    <br><br>
+    <button class="primary secondary" onclick="document.getElementById('restore').click()">데이터 복원</button>
+    <input id="restore" type="file" accept=".json" hidden style="display:none">
+    <br><br>
+    <button class="primary danger" onclick="resetData()">전체 기록 삭제</button>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-page="home" class="active" onclick="show('home')"><span class="icon">⌂</span>홈</button>
+  <button data-page="history" onclick="show('history')"><span class="icon">▤</span>내역</button>
+  <button data-page="add" onclick="newEntry()"><span class="icon">⊕</span>등록</button>
+  <button data-page="stats" onclick="show('stats')"><span class="icon">▥</span>통계</button>
+  <button data-page="settings" onclick="show('settings')"><span class="icon">⚙</span>설정</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+const won=n=>Number(n).toLocaleString('ko-KR')+'원';
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let data=JSON.parse(localStorage.getItem('transferBudget')||'{"budget":0,"expenses":[]}');
+let editing=null;
+
+function save(){
+  localStorage.setItem('transferBudget',JSON.stringify(data));
+  render();
+}
+function show(page){
+  document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===page));
+  document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===page));
+  window.scrollTo(0,0);
+  render();
+}
+function newEntry(){
+  editing=null;
+  $('expenseForm').reset();
+  $('date').value=today();
+  $('formTitle').textContent='지출 등록';
+  show('add');
+}
+$('expenseForm').onsubmit=e=>{
+  e.preventDefault();
+  const entry={
+    id:editing||Date.now().toString(),
+    item:$('item').value.trim(),
+    price:Number($('price').value),
+    category:$('category').value,
+    date:$('date').value,
+    status:$('status').value,
+    memo:$('memo').value
+  };
+  if(!entry.item||entry.price<=0)return;
+  data.expenses=data.expenses.filter(x=>x.id!==entry.id);
+  data.expenses.push(entry);
+  save();
+  show('home');
+};
+function edit(id){
+  const x=data.expenses.find(e=>e.id===id);
+  if(!x)return;
+  editing=id;
+  ['item','price','category','date','status','memo'].forEach(k=>$(k).value=x[k]);
+  $('formTitle').textContent='지출 수정';
+  show('add');
+}
+function removeEntry(id){
+  if(confirm('이 지출을 삭제하시겠습니까?')){
+    data.expenses=data.expenses.filter(x=>x.id!==id);
+    save();
+  }
+}
+function entryList(list){
+  if(!list.length)return '<div class="empty">등록된 지출이 없습니다.</div>';
+  return list.map(x=>`
+    <div class="entry">
+      <div class="row">
+        <strong>${esc(x.item)}</strong>
+        <strong>${won(x.price)}</strong>
+      </div>
+      <p class="small">${esc(x.date)} · ${esc(x.category)} · ${x.status==='paid'?'결제 완료':'결제 예정'}</p>
+      ${x.memo?'<p class="small">'+esc(x.memo)+'</p>':''}
+      <div class="actions">
+        <button class="secondary" onclick="edit('${x.id}')">수정</button>
+        <button class="danger" onclick="removeEntry('${x.id}')">삭제</button>
+      </div>
+    </div>`).join('');
+}
+function group(list,key){
+  const result={};
+  list.forEach(x=>{
+    const k=key(x);
+    result[k]=(result[k]||0)+x.price;
+  });
+  return Object.entries(result);
+}
+function chart(list){
+  if(!list.length)return '<div class="empty">아직 지출 기록이 없습니다.</div>';
+  const sum=list.reduce((s,x)=>s+x[1],0);
+  return list.map(([name,value])=>`
+    <div class="row"><span>${esc(name)}</span><strong>${won(value)}</strong></div>
+    <div class="bar"><div class="fill" style="width:${value/sum*100}%"></div></div>
+    <br>`).join('');
+}
+function render(){
+  const list=[...data.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  const paid=list.filter(x=>x.status==='paid');
+  const sum=arr=>arr.reduce((s,x)=>s+x.price,0);
+  const total=sum(paid);
+  $('total').textContent=won(total);
+  $('monthly').textContent=won(sum(paid.filter(x=>x.date.startsWith(today().slice(0,7)))));
+  $('planned').textContent=won(sum(list.filter(x=>x.status==='planned')));
+  $('remaining').textContent=data.budget?won(data.budget-total):'예산 미설정';
+  $('budgetBar').style.width=(data.budget?Math.min(100,total/data.budget*100):0)+'%';
+  $('budgetText').textContent='총예산 '+won(data.budget)+' · 사용 '+(data.budget?Math.round(total/data.budget*100):0)+'%';
+  $('recent').innerHTML=entryList(paid.slice(0,3));
+  $('entries').innerHTML=entryList(list.filter(x=>$('filter').value==='all'||x.status===$('filter').value));
+  $('categories').innerHTML=chart(group(paid,x=>x.category).sort((a,b)=>b[1]-a[1]));
+  $('months').innerHTML=chart(group(paid,x=>x.date.slice(0,7)).sort((a,b)=>b[0].localeCompare(a[0])));
+  $('budget').value=data.budget||'';
+}
+function saveBudget(){
+  data.budget=Math.max(0,Number($('budget').value));
+  save();
+  alert('예산을 저장했습니다.');
+}
+function backup(){
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='편입가계부_'+today()+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$('restore').onchange=async e=>{
+  try{
+    const x=JSON.parse(await e.target.files[0].text());
+    if(!Array.isArray(x.expenses)||!Number.isFinite(x.budget)||x.budget<0)throw Error();
+    if(!x.expenses.every(v=>typeof v.item==='string'&&Number.isFinite(v.price)&&v.price>0&&typeof v.date==='string'&&typeof v.category==='string'&&['paid','planned'].includes(v.status)))throw Error();
+    if(confirm('기존 기록을 백업 데이터로 교체하시겠습니까?')){
+      data={budget:x.budget,expenses:x.expenses.map((v,i)=>({...v,id:Date.now().toString()+i}))};
+      save();
+      alert('복원 완료');
+    }
+  }catch{alert('올바른 백업 파일이 아닙니다.')}
+  e.target.value='';
+};
+function resetData(){
+  if(confirm('모든 지출 기록을 삭제하시겠습니까?')){
+    data={budget:0,expenses:[]};
+    save();
+  }
+}
+$('date').value=today();
+render();
+</script>
+</body>
+</html>
