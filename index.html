@@ -1,310 +1,464 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="편입 가계부">
-<title>편입 가계부</title>
+<meta name="apple-mobile-web-app-title" content="편입 마스터">
+<title>편입 마스터</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;background:#f2f4f6;color:#191f28;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
-main{max-width:500px;margin:auto;padding:24px 20px 100px}
-h1{font-size:25px;margin:12px 0 24px}
+body{margin:0;background:#f2f4f6;color:#191f28;font:16px -apple-system,BlinkMacSystemFont,sans-serif}
+main{max-width:560px;margin:auto;padding:24px 18px 100px}
+h1{font-size:26px}
 h2{font-size:19px}
-.card{
-  background:white;border-radius:22px;
-  padding:22px;margin-bottom:16px;
-}
+article{background:white;border-radius:20px;padding:20px;margin:12px 0}
 .hero{background:#3182f6;color:white}
-.label{font-size:14px;opacity:.8}
-.amount{font-size:34px;font-weight:800;margin:12px 0}
-.row{display:flex;justify-content:space-between;gap:12px}
-.small{font-size:14px;color:#6b7684}
+.big{font-size:32px;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+small{color:#6b7684}
 button,input,select,textarea{font:inherit}
-button{
-  border:0;border-radius:12px;padding:13px;
-  background:#3182f6;color:white;cursor:pointer;
-}
-.primary{width:100%;font-weight:700}
+button{border:0;background:#3182f6;color:white;border-radius:12px;padding:12px;cursor:pointer}
+input:not([type=checkbox]),select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 12px;background:white}
+input[type=checkbox]{width:24px;height:24px;accent-color:#3182f6}
+nav{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:center;padding:8px 0 calc(8px + env(safe-area-inset-bottom));border-top:1px solid #ddd}
+nav button{background:white;color:#6b7684;flex:1;max-width:100px;font-size:12px;padding:12px 2px}
+nav button.on{color:#3182f6;font-weight:bold}
+.line{border-bottom:1px solid #eee;padding:14px 0}
+.line:last-child{border:0}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.day{padding:10px 0;border-radius:8px;background:#f2f4f6}
+.ok{background:#dbeafe;color:#1763c6}
+.danger{background:#fff0f0;color:#d33}
 .secondary{background:#e8f3ff;color:#3182f6}
-.danger{background:#fff0f0;color:#e54848}
-input,select,textarea{
-  width:100%;padding:14px;margin:7px 0 15px;
-  border:1px solid #e5e8eb;border-radius:12px;
-  background:#f9fafb;font-size:16px;
-}
-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  display:flex;justify-content:center;background:white;
-  padding:10px 0 calc(10px + env(safe-area-inset-bottom));
-  border-top:1px solid #e5e8eb;
-}
-nav button{
-  flex:1;max-width:100px;background:white;
-  color:#6b7684;font-size:12px;padding:8px 0;
-}
-nav button.active{color:#3182f6;font-weight:800}
-.icon{display:block;font-size:23px;margin-bottom:5px}
-.bar{height:9px;background:#e5e8eb;border-radius:9px;overflow:hidden;margin:12px 0}
-.fill{height:100%;background:#3182f6;border-radius:9px}
-.entry{padding:17px 0;border-bottom:1px solid #f2f4f6}
-.entry:last-child{border:0}
-.entry strong{font-size:16px}
-.actions{display:flex;gap:8px;margin-top:10px}
-.actions button{font-size:12px;padding:7px 12px}
-.page{display:none}
-.page.active{display:block}
-.empty{text-align:center;color:#8b95a1;padding:25px 0}
+label{display:block}
+progress{width:100%;accent-color:#3182f6}
 </style>
 </head>
 <body>
 <main>
-<h1>편입 가계부</h1>
-
-<section id="home" class="page active">
-  <div class="card hero">
-    <div class="label">지금까지 사용한 금액</div>
-    <div class="amount" id="total">0원</div>
-    <div class="row">
-      <span>이번 달 지출</span>
-      <strong id="monthly">0원</strong>
-    </div>
-  </div>
-  <div class="card">
-    <div class="small">남은 예산</div>
-    <div class="amount" id="remaining">0원</div>
-    <div class="bar"><div class="fill" id="budgetBar"></div></div>
-    <div class="small" id="budgetText"></div>
-  </div>
-  <div class="card">
-    <div class="small">앞으로 지출할 예정 금액</div>
-    <h2 id="planned">0원</h2>
-  </div>
-  <button class="primary" onclick="newEntry()">＋ 지출 등록</button>
-  <h2>최근 지출</h2>
-  <div class="card" id="recent"></div>
-</section>
-
-<section id="history" class="page">
-  <h2>전체 지출 내역</h2>
-  <select id="filter" onchange="render()">
-    <option value="all">전체 내역</option>
-    <option value="paid">실제 지출</option>
-    <option value="planned">예정 지출</option>
-  </select>
-  <div class="card" id="entries"></div>
-</section>
-
-<section id="add" class="page">
-  <div class="card">
-    <h2 id="formTitle">지출 등록</h2>
-    <form id="expenseForm">
-      <label>구매 항목</label>
-      <input id="item" placeholder="예: 해커스 무제한 패스" required>
-      <label>결제 금액</label>
-      <input id="price" type="number" inputmode="numeric" min="1" placeholder="금액 입력" required>
-      <label>카테고리</label>
-      <select id="category">
-        <option>인터넷 강의</option>
-        <option>수학 교재</option>
-        <option>영어 교재</option>
-        <option>학원비</option>
-        <option>모의고사</option>
-        <option>원서 접수</option>
-        <option>교통비</option>
-        <option>독서실</option>
-        <option>기타</option>
-      </select>
-      <label>날짜</label>
-      <input id="date" type="date" required>
-      <label>지출 상태</label>
-      <select id="status">
-        <option value="paid">결제 완료</option>
-        <option value="planned">결제 예정</option>
-      </select>
-      <label>메모</label>
-      <textarea id="memo" placeholder="선택 입력"></textarea>
-      <button class="primary" type="submit">저장하기</button>
-    </form>
-  </div>
-</section>
-
-<section id="stats" class="page">
-  <h2>카테고리별 지출</h2>
-  <div class="card" id="categories"></div>
-  <h2>월별 지출</h2>
-  <div class="card" id="months"></div>
-</section>
-
-<section id="settings" class="page">
-  <div class="card">
-    <h2>목표 예산 설정</h2>
-    <input id="budget" type="number" min="0" inputmode="numeric" placeholder="총예산 입력">
-    <button class="primary" onclick="saveBudget()">예산 저장</button>
-  </div>
-  <div class="card">
-    <h2>데이터 관리</h2>
-    <button class="primary secondary" onclick="backup()">데이터 백업</button>
-    <br><br>
-    <button class="primary secondary" onclick="document.getElementById('restore').click()">데이터 복원</button>
-    <input id="restore" type="file" accept=".json" hidden style="display:none">
-    <br><br>
-    <button class="primary danger" onclick="resetData()">전체 기록 삭제</button>
-  </div>
-</section>
+<h1>편입 마스터</h1>
+<div id="view"></div>
 </main>
-
-<nav>
-  <button data-page="home" class="active" onclick="show('home')"><span class="icon">⌂</span>홈</button>
-  <button data-page="history" onclick="show('history')"><span class="icon">▤</span>내역</button>
-  <button data-page="add" onclick="newEntry()"><span class="icon">⊕</span>등록</button>
-  <button data-page="stats" onclick="show('stats')"><span class="icon">▥</span>통계</button>
-  <button data-page="settings" onclick="show('settings')"><span class="icon">⚙</span>설정</button>
-</nav>
-
+<nav id="nav"></nav>
 <script>
 const $=id=>document.getElementById(id);
-const won=n=>Number(n).toLocaleString('ko-KR')+'원';
-const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won=n=>Number(n).toLocaleString('ko-KR')+'원';
 
-let data=JSON.parse(localStorage.getItem('transferBudget')||'{"budget":0,"expenses":[]}');
+const date=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today=()=>date(new Date());
+const parse=d=>new Date(d+'T12:00:00');
+const shift=(d,n)=>{
+  let x=parse(d);
+  x.setDate(x.getDate()+n);
+  return date(x);
+};
+const dow=d=>parse(d).getDay();
+
+const defaults=[
+ ['09:00~10:30','수학 인강 2강'],
+ ['10:40~12:10','수학 복습 및 문제풀이'],
+ ['14:00~14:40','영어 문법'],
+ ['14:40~15:20','영어 독해'],
+ ['15:30~16:10','영어 단어 암기 및 복습']
+];
+
+const sat=[
+ ['09:00~10:30','수학 주간 복습'],
+ ['10:40~12:10','수학 오답 풀이'],
+ ['14:00~14:40','영어 문법 테스트'],
+ ['14:40~15:20','영어 독해 복습'],
+ ['15:30~16:10','영어 어휘 테스트']
+];
+
+function load(k,f){
+ try{return JSON.parse(localStorage.getItem(k))||f}
+ catch{return f}
+}
+
+let q=load('transferQuest',{
+ days:{},tasks:defaults,sat:sat
+});
+
+let b=load('transferBudget',{
+ budget:0,expenses:[]
+});
+
+let page='홈';
+let month=today().slice(0,7);
 let editing=null;
 
+const cats=[
+ '인터넷 강의','수학 교재','영어 교재',
+ '학원비','모의고사','원서 접수',
+ '교통비','독서실','기타'
+];
+
 function save(){
-  localStorage.setItem('transferBudget',JSON.stringify(data));
-  render();
+ localStorage.setItem('transferQuest',JSON.stringify(q));
+ localStorage.setItem('transferBudget',JSON.stringify(b));
 }
-function show(page){
-  document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===page));
-  document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===page));
-  window.scrollTo(0,0);
-  render();
+
+function tasks(d){
+ return dow(d)===0?[]:dow(d)===6?q.sat:q.tasks;
 }
-function newEntry(){
-  editing=null;
-  $('expenseForm').reset();
-  $('date').value=today();
-  $('formTitle').textContent='지출 등록';
-  show('add');
+
+function record(d){return q.days[d]}
+
+function success(d){
+ let r=record(d);
+ return !!(r&&r.tasks.length&&r.done.every(Boolean)&&r.done.length===r.tasks.length);
 }
-$('expenseForm').onsubmit=e=>{
-  e.preventDefault();
-  const entry={
-    id:editing||Date.now().toString(),
-    item:$('item').value.trim(),
-    price:Number($('price').value),
-    category:$('category').value,
-    date:$('date').value,
-    status:$('status').value,
-    memo:$('memo').value
+
+function stats(){
+ let dates=Object.keys(q.days).filter(d=>d<=today()).sort();
+ let total=dates.filter(success).length;
+ let xp=dates.reduce((s,d)=>s+q.days[d].done.filter(Boolean).length*20,0);
+ let best=0,run=0;
+
+ if(dates.length){
+  for(let d=dates[0];d<=today();d=shift(d,1)){
+   if(dow(d)===0)continue;
+   if(success(d)){
+    run++;
+    best=Math.max(best,run);
+   }else if(d!==today())run=0;
+  }
+ }
+ return {total,xp,best,run};
+}
+
+function go(p){
+ page=p;
+ editing=null;
+ render();
+ window.scrollTo(0,0);
+}
+
+function toggle(i,v){
+ let d=today();
+ if(!q.days[d]){
+  q.days[d]={
+   tasks:tasks(d).map(x=>[...x]),
+   done:tasks(d).map(()=>false)
   };
-  if(!entry.item||entry.price<=0)return;
-  data.expenses=data.expenses.filter(x=>x.id!==entry.id);
-  data.expenses.push(entry);
-  save();
-  show('home');
-};
-function edit(id){
-  const x=data.expenses.find(e=>e.id===id);
-  if(!x)return;
-  editing=id;
-  ['item','price','category','date','status','memo'].forEach(k=>$(k).value=x[k]);
-  $('formTitle').textContent='지출 수정';
-  show('add');
+ }
+ q.days[d].done[i]=v;
+ save();
+ render();
 }
-function removeEntry(id){
-  if(confirm('이 지출을 삭제하시겠습니까?')){
-    data.expenses=data.expenses.filter(x=>x.id!==id);
-    save();
-  }
+
+function quest(){
+ let d=today();
+ let r=record(d);
+ let t=r?.tasks||tasks(d);
+ let done=r?.done||t.map(()=>false);
+ let n=done.filter(Boolean).length;
+
+ return `<article>
+ <div class="row">
+ <h2>오늘의 퀘스트</h2>
+ <b>${n}/${t.length}</b>
+ </div>
+ ${t.length?`
+ <progress max="${t.length}" value="${n}"></progress>
+ ${t.map((x,i)=>`
+ <label class="row line">
+ <span><small>${esc(x[0])}</small><br>
+ ${done[i]?'✓ ':''}${esc(x[1])}
+ </span>
+ <input type="checkbox"
+ ${done[i]?'checked':''}
+ onchange="toggle(${i},this.checked)">
+ </label>`).join('')}
+ ${n===t.length?'<h2>🎉 오늘의 퀘스트 완료!</h2>':''}
+ `:'☕ 일요일 휴식일 · 연속 기록 유지'}
+ </article>`;
 }
-function entryList(list){
-  if(!list.length)return '<div class="empty">등록된 지출이 없습니다.</div>';
-  return list.map(x=>`
-    <div class="entry">
-      <div class="row">
-        <strong>${esc(x.item)}</strong>
-        <strong>${won(x.price)}</strong>
-      </div>
-      <p class="small">${esc(x.date)} · ${esc(x.category)} · ${x.status==='paid'?'결제 완료':'결제 예정'}</p>
-      ${x.memo?'<p class="small">'+esc(x.memo)+'</p>':''}
-      <div class="actions">
-        <button class="secondary" onclick="edit('${x.id}')">수정</button>
-        <button class="danger" onclick="removeEntry('${x.id}')">삭제</button>
-      </div>
-    </div>`).join('');
+
+function sums(){
+ let paid=b.expenses.filter(x=>x.status==='paid');
+ let sum=a=>a.reduce((s,x)=>s+Number(x.price),0);
+ return {
+ paid,
+ total:sum(paid),
+ monthly:sum(paid.filter(x=>x.date.startsWith(today().slice(0,7)))),
+ planned:sum(b.expenses.filter(x=>x.status==='planned'))
+ };
 }
-function group(list,key){
-  const result={};
-  list.forEach(x=>{
-    const k=key(x);
-    result[k]=(result[k]||0)+x.price;
-  });
-  return Object.entries(result);
-}
-function chart(list){
-  if(!list.length)return '<div class="empty">아직 지출 기록이 없습니다.</div>';
-  const sum=list.reduce((s,x)=>s+x[1],0);
-  return list.map(([name,value])=>`
-    <div class="row"><span>${esc(name)}</span><strong>${won(value)}</strong></div>
-    <div class="bar"><div class="fill" style="width:${value/sum*100}%"></div></div>
-    <br>`).join('');
-}
+
 function render(){
-  const list=[...data.expenses].sort((a,b)=>b.date.localeCompare(a.date));
-  const paid=list.filter(x=>x.status==='paid');
-  const sum=arr=>arr.reduce((s,x)=>s+x.price,0);
-  const total=sum(paid);
-  $('total').textContent=won(total);
-  $('monthly').textContent=won(sum(paid.filter(x=>x.date.startsWith(today().slice(0,7)))));
-  $('planned').textContent=won(sum(list.filter(x=>x.status==='planned')));
-  $('remaining').textContent=data.budget?won(data.budget-total):'예산 미설정';
-  $('budgetBar').style.width=(data.budget?Math.min(100,total/data.budget*100):0)+'%';
-  $('budgetText').textContent='총예산 '+won(data.budget)+' · 사용 '+(data.budget?Math.round(total/data.budget*100):0)+'%';
-  $('recent').innerHTML=entryList(paid.slice(0,3));
-  $('entries').innerHTML=entryList(list.filter(x=>$('filter').value==='all'||x.status===$('filter').value));
-  $('categories').innerHTML=chart(group(paid,x=>x.category).sort((a,b)=>b[1]-a[1]));
-  $('months').innerHTML=chart(group(paid,x=>x.date.slice(0,7)).sort((a,b)=>b[0].localeCompare(a[0])));
-  $('budget').value=data.budget||'';
+ let s=stats(),m=sums(),v='';
+
+ $('nav').innerHTML=[
+ '홈','퀘스트','기록','가계부','업적','설정'
+ ].map(p=>`
+ <button class="${p===page?'on':''}"
+ onclick="go('${p}')">${p}</button>
+ `).join('');
+
+ if(page==='홈'){
+ v=`
+ <article class="hero">
+ 🔥 연속 달성
+ <div class="big">${s.run}일</div>
+ 누적 성공 ${s.total}일 · 최고 ${s.best}일
+ </article>
+ <article>
+ Lv. ${1+Math.floor(s.xp/500)} · ${s.xp} XP
+ <progress max="200" value="${Math.min(200,s.total)}"></progress>
+ 편입 마스터까지 ${Math.max(0,200-s.total)}일
+ </article>
+ ${quest()}
+ <article onclick="go('가계부')">
+ 편입 총지출
+ <div class="big">${won(m.total)}</div>
+ 이번 달 ${won(m.monthly)}
+ </article>`;
+ }
+
+ if(page==='퀘스트')v=quest();
+
+ if(page==='기록'){
+ let first=month+'-01';
+ let n=new Date(parse(first).getFullYear(),parse(first).getMonth()+1,0).getDate();
+
+ v=`<article>
+ <div class="row">
+ <button onclick="move(-1)">‹</button>
+ <b>${month}</b>
+ <button onclick="move(1)">›</button>
+ </div>
+ <div class="grid">
+ ${['일','월','화','수','목','금','토'].map(x=>`<small>${x}</small>`).join('')}
+ ${'<span></span>'.repeat(dow(first))}
+ ${Array.from({length:n},(_,i)=>{
+ let d=month+'-'+String(i+1).padStart(2,'0');
+ return `<div class="day ${success(d)?'ok':''}">
+ ${i+1}<br>
+ ${success(d)?'✓':dow(d)===0?'☕':d>today()?'·':record(d)?'◐':'–'}
+ </div>`;
+ }).join('')}
+ </div>
+ </article>
+ <article>
+ 누적 성공 ${s.total}일 · 최고 연속 ${s.best}일
+ </article>`;
+ }
+
+ if(page==='가계부'){
+ let e=b.expenses.find(x=>x.id===editing)||{};
+ let group={};
+ m.paid.forEach(x=>group[x.category]=(group[x.category]||0)+Number(x.price));
+
+ v=`
+ <article class="hero">
+ 총지출
+ <div class="big">${won(m.total)}</div>
+ 이번 달 ${won(m.monthly)}
+ </article>
+
+ <article>
+ 남은 예산 <b>${b.budget?won(b.budget-m.total):'미설정'}</b>
+ <p>예정 지출 ${won(m.planned)}</p>
+ </article>
+
+ <article>
+ <h2>${editing?'지출 수정':'지출 등록'}</h2>
+ <form onsubmit="expense(event)">
+ <input id="item" required placeholder="구매 항목" value="${esc(e.item)}">
+ <input id="price" required type="number" min="1" step="1" placeholder="금액" value="${e.price||''}">
+ <select id="category">
+ ${cats.map(c=>`<option ${e.category===c?'selected':''}>${c}</option>`).join('')}
+ </select>
+ <input id="edate" type="date" required value="${esc(e.date||today())}">
+ <select id="status">
+ <option value="paid">결제 완료</option>
+ <option value="planned" ${e.status==='planned'?'selected':''}>결제 예정</option>
+ </select>
+ <textarea id="memo" placeholder="메모">${esc(e.memo)}</textarea>
+ <button>저장</button>
+ </form>
+ </article>
+
+ <article>
+ <h2>카테고리별 지출</h2>
+ ${Object.entries(group).map(([k,v])=>`
+ <div class="row">${esc(k)} <b>${won(v)}</b></div>
+ <progress max="${m.total||1}" value="${v}"></progress>
+ `).join('')||'기록 없음'}
+ </article>
+
+ <article>
+ <h2>월별 지출</h2>
+ ${[...new Set(m.paid.map(x=>x.date.slice(0,7)))].sort().reverse().map(k=>`
+ <div class="row line">
+ ${esc(k)}
+ <b>${won(m.paid.filter(x=>x.date.startsWith(k)).reduce((a,x)=>a+Number(x.price),0))}</b>
+ </div>`).join('')||'기록 없음'}
+ </article>
+
+ <article>
+ <h2>지출 내역</h2>
+ ${[...b.expenses].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`
+ <div class="line">
+ <div class="row">
+ <b>${esc(x.item)}</b>
+ <b>${won(x.price)}</b>
+ </div>
+ <small>${esc(x.date)} · ${esc(x.category)} · ${x.status==='paid'?'완료':'예정'}</small>
+ <p>${esc(x.memo)}</p>
+ <button class="secondary" onclick="edit(${b.expenses.indexOf(x)})">수정</button>
+ <button class="danger" onclick="del(${b.expenses.indexOf(x)})">삭제</button>
+ </div>`).join('')||'기록 없음'}
+ </article>`;
+ }
+
+ if(page==='업적'){
+ v=`<article>
+ Lv. ${1+Math.floor(s.xp/500)} · ${s.xp} XP
+ </article>`+
+ [
+ ['첫걸음',1,s.total],
+ ['작심삼일 돌파',3,s.best],
+ ['일주일의 기적',7,s.best],
+ ['꾸준함의 증명',30,s.best],
+ ['백일의 노력',100,s.total],
+ ['편입 마스터',200,s.total]
+ ].map(([name,n,a])=>`
+ <article>
+ ${a>=n?'🏆':'🔒'} <b>${name}</b>
+ <p>${Math.min(a,n)} / ${n}일</p>
+ <progress max="${n}" value="${Math.min(a,n)}"></progress>
+ </article>`).join('');
+ }
+
+ if(page==='설정'){
+ v=`
+ <article>
+ <h2>목표 예산</h2>
+ <input id="budget" type="number" min="0" value="${b.budget}">
+ <button onclick="b.budget=Math.max(0,Number($('budget').value));save();render()">저장</button>
+ </article>
+
+ <article>
+ <h2>공부 계획 수정</h2>
+ <small>한 줄에 시간 | 공부 내용. 이미 체크한 날짜는 기존 계획 유지.</small>
+ <p>평일</p>
+ <textarea id="weekday" rows="6">${esc(q.tasks.map(x=>x.join(' | ')).join('\n'))}</textarea>
+ <p>토요일</p>
+ <textarea id="saturday" rows="6">${esc(q.sat.map(x=>x.join(' | ')).join('\n'))}</textarea>
+ <button onclick="plans()">계획 저장</button>
+ </article>
+
+ <article>
+ <h2>데이터 관리</h2>
+ <button onclick="backup()">전체 백업</button>
+ <p>백업 복원 (기존 가계부 백업도 지원)</p>
+ <input type="file" accept=".json" onchange="restore(this)">
+ </article>`;
+ }
+
+ $('view').innerHTML=v;
 }
-function saveBudget(){
-  data.budget=Math.max(0,Number($('budget').value));
-  save();
-  alert('예산을 저장했습니다.');
+
+function move(n){
+ let d=parse(month+'-01');
+ d.setMonth(d.getMonth()+n);
+ month=date(d).slice(0,7);
+ render();
 }
+
+function expense(ev){
+ ev.preventDefault();
+ let x={
+ id:editing||String(Date.now()),
+ item:$('item').value.trim(),
+ price:Number($('price').value),
+ category:$('category').value,
+ date:$('edate').value,
+ status:$('status').value,
+ memo:$('memo').value
+ };
+ if(!x.item||!Number.isSafeInteger(x.price)||x.price<1)return;
+ b.expenses=b.expenses.filter(y=>y.id!==x.id);
+ b.expenses.push(x);
+ editing=null;
+ save();
+ render();
+}
+
+function edit(i){
+ editing=b.expenses[i].id;
+ render();
+ window.scrollTo(0,0);
+}
+
+function del(i){
+ if(confirm('삭제할까요?')){
+ b.expenses.splice(i,1);
+ save();
+ render();
+ }
+}
+
+function plans(){
+ let read=id=>$(id).value.split('\n').filter(x=>x.trim()).map(x=>x.split('|').map(y=>y.trim()));
+ let a=read('weekday'),c=read('saturday');
+
+ if(![a,c].every(t=>t.length&&t.every(x=>x.length===2&&x.every(Boolean))))
+ return alert('시간 | 공부 내용 형식으로 입력하세요.');
+
+ q.tasks=a;
+ q.sat=c;
+ save();
+ render();
+}
+
 function backup(){
-  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='편입가계부_'+today()+'.json';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ let a=document.createElement('a');
+ let u=URL.createObjectURL(new Blob([JSON.stringify({q,b})],{type:'application/json'}));
+ a.href=u;
+ a.download='transfer-master-'+today()+'.json';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
-$('restore').onchange=async e=>{
-  try{
-    const x=JSON.parse(await e.target.files[0].text());
-    if(!Array.isArray(x.expenses)||!Number.isFinite(x.budget)||x.budget<0)throw Error();
-    if(!x.expenses.every(v=>typeof v.item==='string'&&Number.isFinite(v.price)&&v.price>0&&typeof v.date==='string'&&typeof v.category==='string'&&['paid','planned'].includes(v.status)))throw Error();
-    if(confirm('기존 기록을 백업 데이터로 교체하시겠습니까?')){
-      data={budget:x.budget,expenses:x.expenses.map((v,i)=>({...v,id:Date.now().toString()+i}))};
-      save();
-      alert('복원 완료');
-    }
-  }catch{alert('올바른 백업 파일이 아닙니다.')}
-  e.target.value='';
-};
-function resetData(){
-  if(confirm('모든 지출 기록을 삭제하시겠습니까?')){
-    data={budget:0,expenses:[]};
-    save();
-  }
+
+async function restore(el){
+ try{
+ let x=JSON.parse(await el.files[0].text());
+ let nb=x.b||x,nq=x.q;
+
+ let validTasks=t=>Array.isArray(t)&&t.length>0&&t.every(z=>Array.isArray(z)&&z.length===2&&z.every(v=>typeof v==='string'));
+
+ if(!Number.isFinite(nb.budget)||nb.budget<0||
+ !Array.isArray(nb.expenses)||
+ !nb.expenses.every(e=>typeof e.item==='string'&&typeof e.date==='string'&&Number.isFinite(e.price)&&e.price>0&&['paid','planned'].includes(e.status)))throw 0;
+
+ if(nq&&(!validTasks(nq.tasks)||!validTasks(nq.sat)||!nq.days||
+ !Object.entries(nq.days).every(([d,r])=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&validTasks(r.tasks)&&Array.isArray(r.done)&&r.done.length===r.tasks.length&&r.done.every(v=>typeof v==='boolean'))))throw 0;
+
+ if(confirm('백업으로 기록을 교체할까요?')){
+ b=nb;
+ if(nq)q=nq;
+ save();
+ render();
+ }
+ }catch{
+ alert('올바른 백업 파일이 아닙니다.');
+ }
 }
-$('date').value=today();
+
+let last=today();
+setInterval(()=>{
+ if(today()!==last){
+ last=today();
+ render();
+ }
+},15000);
+
 render();
 </script>
 </body>
